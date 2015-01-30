@@ -1,14 +1,13 @@
 <?php
 define('EXAMPLE_DIR', dirname(__FILE__) . '/');
-define('SRC_DIR', EXAMPLE_DIR . '../');
+define('SRC_DIR', EXAMPLE_DIR . '../src/');
 
 require_once SRC_DIR . 'CsvReader.php';
 require_once SRC_DIR . 'CsvWriter.php';
 require_once SRC_DIR . 'KmlWriter.php';
 require_once SRC_DIR . 'MapReduce.php';
 
-// Sample data downloaded from SpatialKey website:
-// http://support.spatialkey.com/spatialkey-sample-csv-data/
+// Sample data downloaded from SpatialKey. See README.
 $input = new CsvReader(EXAMPLE_DIR . 'FL_insurance_sample.csv');
 
 $output1 = new CsvWriter(EXAMPLE_DIR . 'output.csv', [ 'overwrite' => 1 ]);
@@ -24,6 +23,9 @@ $map = function ($row) {
 	return $ret;
 };
 
+// $new is the new data to be aggregated
+// $carry is the previous data or null if this is the first call
+// returns the data to be passed to the new call of the function or to be exported if this is the last call
 $reduce = function ($new, $carry) {
 	if ( !$carry ) {
 		return array_merge($new, array('count' => 1));
