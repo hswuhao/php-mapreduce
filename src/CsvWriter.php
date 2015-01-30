@@ -1,6 +1,5 @@
 <?php
 require_once 'GeneratorAggregate.php';
-require_once 'GeneratorAggregateHack.php';
 require_once 'WithOptions.php';
 
 class CsvWriter implements GeneratorAggregate {

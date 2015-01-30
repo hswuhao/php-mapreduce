@@ -8,7 +8,6 @@
 // - add parameter with closure to generate Placemark from row
 
 require_once 'GeneratorAggregate.php';
-require_once 'GeneratorAggregateHack.php';
 require_once 'WithOptions.php';
 
 class KmlWriter implements GeneratorAggregate {
