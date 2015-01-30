@@ -3,7 +3,7 @@
  * Provides access to a set of configuration options.
  * Functions using this trait have to:
  *  - declare a static $defaults variable
- *  - call $this->reset_options() in order to load defaults
+ *  - call $this->load_defaults() in order to load defaults
  *  - call $this->options(...) to get/set options
  */
 trait WithOptions {
@@ -11,7 +11,7 @@ trait WithOptions {
 	
 	// reads options from static::$defaults, if it exists
 	// $clear (boolean): if true, options are emptied before
-	public function reset_options ($clear = false) {
+	public function load_defaults ($clear = false) {
 		if ( isset(static::$defaults) ) {
 			if ( $clear ) {
 				$this->opts = array();

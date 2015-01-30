@@ -36,7 +36,7 @@ class CsvReader implements IteratorAggregate {
 	
 	public function __construct ($inputfile, $options = array()) {
 		$this->inputfile = $inputfile;
-		$this->reset_options();
+		$this->load_defaults();
 		$this->options($options);
 	}
 	

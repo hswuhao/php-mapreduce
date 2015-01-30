@@ -26,7 +26,7 @@ class MapReduce {
 		$this->reduce = $reduce;
 		$this->outputs = is_array($outputs) ? $outputs : [$outputs];
 		
-		$this->reset_options();
+		$this->load_defaults();
 		$this->options($options);
 	}
 	

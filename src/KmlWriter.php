@@ -23,7 +23,7 @@ class KmlWriter implements GeneratorAggregate {
 	
 	public function __construct ($outputfile, $options = array()) {
 		$this->outputfile = $outputfile;
-		$this->reset_options();
+		$this->load_defaults();
 		$this->options($options);
 		
 		if ( !$this->options('overwrite') ) {
