@@ -1,11 +1,7 @@
 <?php
-require_once 'GeneratorAggregate.php';
-require_once 'WithOptions.php';
+require_once 'Writer.php';
 
-class CsvWriter implements GeneratorAggregate {
-	use GeneratorAggregateHack;
-	use WithOptions;
-	
+class CsvWriter extends Writer {
 	public static $defaults = array (
 		'overwrite' => false,
 		'with_headers' => true,
@@ -18,9 +14,9 @@ class CsvWriter implements GeneratorAggregate {
 	private $outputfile = false;
 	
 	public function __construct ($outputfile, $options = array()) {
+		parent::__construct($options);
+		
 		$this->outputfile = $outputfile;
-		$this->load_defaults();
-		$this->options($options);
 		
 		if ( !$this->options('overwrite') ) {
 			if ( file_exists($outputfile) ) {
@@ -29,7 +25,7 @@ class CsvWriter implements GeneratorAggregate {
 		}
 	}
 	
-	private function csv_row ($row, $numrow) {
+	private function make_csv_row ($row, $numrow) {
 		$str = str_putcsv($row, $this->options('separator'), $this->options('delimiter')) . "\n";
 		if ( $numrow == 1 ) {
 			$str = str_putcsv(array_keys($row), $this->options('separator'), $this->options('delimiter')) . "\n" . $str;
@@ -37,7 +33,7 @@ class CsvWriter implements GeneratorAggregate {
 		return $str;
 	}
 	
-	private function putLines () {
+	protected function output_generator () {
 		$fh = fopen($this->outputfile, 'w');
 		if ( !$fh ) {
 			throw new Exception('Could not open output file ' . $this->outputfile);
@@ -49,7 +45,7 @@ class CsvWriter implements GeneratorAggregate {
 			
 			if ( $row !== null ) {
 				$numline += 1;
-				$line = $this->csv_row($row, $numline);
+				$line = $this->make_csv_row($row, $numline);
 				if ( $line !== null && $line !== false ) {
 					fwrite($fh, $line);
 				}
@@ -57,9 +53,5 @@ class CsvWriter implements GeneratorAggregate {
 		} while ( $row !== null );
 		
 		fclose($fh);
-	}
-	
-	public function getGenerator () {
-		return $this->putLines();
 	}
 }

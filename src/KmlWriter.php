@@ -7,13 +7,9 @@
 // - add option with the default icon
 // - add parameter with closure to generate Placemark from row
 
-require_once 'GeneratorAggregate.php';
-require_once 'WithOptions.php';
+require_once 'Writer.php';
 
-class KmlWriter implements GeneratorAggregate {
-	use GeneratorAggregateHack;
-	use WithOptions;
-	
+class KmlWriter extends Writer {
 	public static $defaults = array (
 		'overwrite' => false,
 	);
@@ -21,9 +17,9 @@ class KmlWriter implements GeneratorAggregate {
 	private $outputfile = false;
 	
 	public function __construct ($outputfile, $options = array()) {
+		parent::__construct($options);
+		
 		$this->outputfile = $outputfile;
-		$this->load_defaults();
-		$this->options($options);
 		
 		if ( !$this->options('overwrite') ) {
 			if ( file_exists($outputfile) ) {
@@ -32,7 +28,7 @@ class KmlWriter implements GeneratorAggregate {
 		}
 	}
 	
-	private function putLines () {
+	protected function output_generator () {
 		// Creates the Document.
 		$dom = new DOMDocument('1.0', 'UTF-8');
 
@@ -95,9 +91,5 @@ class KmlWriter implements GeneratorAggregate {
 
 		$kmlOutput = $dom->saveXML();
 		file_put_contents($this->outputfile, $kmlOutput);
-	}
-	
-	public function getGenerator () {
-		return $this->putLines();
 	}
 }

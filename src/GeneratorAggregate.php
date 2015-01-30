@@ -11,23 +11,17 @@
  * instead of calling getGenerator() again. See trait GeneratorAggregateHack.
  */
 
-// Just in case some day PHP maintainers decide to add it to the language
-if ( !interface_exists('GeneratorAggregate') ) {
-    interface GeneratorAggregate {
-        public function getGenerator();
-    }
+interface GeneratorAggregate {
+	public function getGenerator();
+}
 
-    trait GeneratorAggregateHack {
-        public function send ($value) {
-            static $generator = null;
-            
-            if ( $generator === null ) {
-                $generator = $this->getGenerator();
-            }
-            $generator->send($value);
-        }
-    }
-} else {
-    trait GeneratorAggregateHack {
-    }
+trait GeneratorAggregateHack {
+	public function send ($value) {
+		static $generator = null;
+		
+		if ( $generator === null ) {
+			$generator = $this->getGenerator();
+		}
+		$generator->send($value);
+	}
 }

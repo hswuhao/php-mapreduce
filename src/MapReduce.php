@@ -30,12 +30,12 @@ class MapReduce {
 		$this->options($options);
 	}
 	
-	public function parse () {
+	public function run () {
 		// $this->map($data) does not work :(
 		// http://stackoverflow.com/questions/5605404/calling-anonymous-functions-defined-as-object-variables-in-php
 		$func_map = $this->map;
 		$func_reduce = $this->reduce;
-		$func_progress = $this->options('progress_callback');
+		$func_progress = $this->options('progress_callback') !== false ? $this->options('progress_callback') : function () {};
 		
 		$reduced = array();
 		
