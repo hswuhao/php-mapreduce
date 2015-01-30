@@ -1,4 +1,11 @@
 <?php
+/*
+ * Provides access to a set of configuration options.
+ * Functions using this trait have to:
+ *  - declare a static $defaults variable
+ *  - call $this->reset_options() in order to load defaults
+ *  - call $this->options(...) to get/set options
+ */
 trait WithOptions {
 	protected $opts = array();
 	
@@ -15,11 +22,14 @@ trait WithOptions {
 		}
 	}
 	
-	// gets/sets options
-	// 1) null / whatever --> gets array with all options
-	// 2) key / null --> gets option key
-	// 3) key / value --> sets option key to value
-	// 4) array / whatever --> sets options according to each key => value of the array
+	/* 
+     * Gets/sets options
+     * Depending on the passed values of $key and $value parameters, the function:
+     *  1) null / whatever --> gets array with all options
+	 *  2) key / null --> gets option key
+	 *  3) key / value --> sets option key to value
+	 *  4) array / whatever --> sets options according to each key => value of the array
+     */
 	public function options ($key = null, $value = null) {
 		if ( $key === null ) {
 			// 1
