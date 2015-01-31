@@ -72,35 +72,35 @@ This function takes two results of the mapping function and creates a new result
 How it works now:
 
 ´´´
-     null         Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ...
-       |            |            |            |
-       +------------|            |            |
-                    ↓            |            |
-                  Reduced        |            |
-                    |            |            |
-                    +------------|            |
-                                 ↓            |
-                               Reduced        |
-                                 |            |
-                                 +------------|
-                                              ↓
-                                            Reduced 
+null         Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ...
+  |            |            |            |
+  +------------|            |            |
+               ↓            |            |
+            Reduced         |            |
+               |            |            |
+               +------------|            |
+                            ↓            |
+                         Reduced         |
+                            |            |
+                            +------------|
+                                         ↓
+                                      Reduced 
 ´´´
 
 How it might work in future versions:
 
 ´´´
-     Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    Mapped #6    ...
-       |            |            |            |            |            |
-       +------------+            +------------+            +------------+
-             ↓                         ↓                         ↓
-           Reduced                   Reduced                   Reduced
-             |                         |                         |
-             +-------------------------+                         +--- - - -
-                          ↓
-                        Reduced
-                          |
-                          +--- - - -
+Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    Mapped #6    ...
+  |            |            |            |            |            |
+  +------------+            +------------+            +------------+
+        ↓                         ↓                         ↓
+     Reduced                   Reduced                   Reduced
+        |                         |                         |
+        +-------------------------+                         +--- - - -
+                     ↓
+                  Reduced
+                     |
+                     +--- - - -
 ´´´
 
 Notice that the second method allows for parallelization. But it requires that the `map` function returns items which are "of the same kind" that the reduced items.
