@@ -23,6 +23,11 @@ $pets = [
 	, [ 'name' => 'Bruce', 'spices' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00 ]
 	, [ 'name' => 'Sting', 'spices' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00 ]
 	, [ 'name' => 'Jay',   'spices' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00 ]
+	, [ 'name' => 'Steve', 'spices' => 'cat',     'birthday' => '2005-06-22', 'visits' => '3', 'revenue' =>  68.00 ]
+	, [ 'name' => 'Mike',  'spices' => 'dog',     'birthday' => '2008-07-21', 'visits' => '2', 'revenue' =>  55.00 ]
+	, [ 'name' => 'Ben',   'spices' => 'dog',     'birthday' => '2009-08-16', 'visits' => '2', 'revenue' =>  71.00 ]
+	, [ 'name' => 'Miles', 'spices' => 'cat',     'birthday' => '2011-09-14', 'visits' => '4', 'revenue' => 346.00 ]
+	, [ 'name' => 'Jack',  'spices' => 'dog',     'birthday' => '2009-10-03', 'visits' => '6', 'revenue' => 244.00 ]
 ];
 
 $input = new ArrayIterator($pets);
@@ -36,7 +41,7 @@ $pets = new CsvReader('pet_data.csv');
 
 **Create the mapping function**
 
-This function transforms each item in the input into another item, more suitable to be processed in the `reduce` function.
+This function transforms each item in the input into another item, more suitable to be processed with the `reduce` function.
 
 ```
      Input #1     Input #2     Input #3     Input #4     Input #5     ...
@@ -157,10 +162,100 @@ $output = new LogToConsole();
 
 **Initialize and run** the Map/Reduce algorithm
 
+If no options are passed to the constructor, only one reduce item is returned... a global aggregator.
+
 ```php
+echo "Getting global data:\n";
 $mapreducer = new MapReduce($input, $mapper, $reducer, $output);
 $mapreducer->run();
+echo "\n";
 ```
+
+Output is:
+
+```
+Getting global data:
+Array
+(
+    [species] => dog
+    [animals] => 10
+    [avg_age] => 5.9726447828732
+    [total_visits] => 28
+    [avg_visits] => 2.8
+    [total_revenue] => 1242
+    [avg_revenue_animal] => 124.2
+    [avg_revenue_visit] => 44.357142857143
+)
+Finished!
+```
+
+If options `grouped` is set to true, one reduce item is returned per group.
+
+Groups are defined by the first value of each mapped item (in this case, `species`.)
+
+In the future, this options will probably change to `group by`, which will be either the key of the value to use as group ID or a closure that accepts the mapped item and returns the group ID.
+
+Also, `$options` argument will be moved from constructor to method `run()`.
+
+```php
+echo "Getting grouped data:\n";
+$mapreducer = new MapReduce($input, $mapper, $reducer, $output, ['grouped' => true]);
+$mapreducer->run();
+echo "\n";
+```
+
+Output is:
+
+```console
+Getting grouped data:
+Array
+(
+    [species] => dog
+    [animals] => 5
+    [avg_age] => 5.8472512168226
+    [total_visits] => 16
+    [avg_visits] => 3.2
+    [total_revenue] => 623
+    [avg_revenue_animal] => 124.6
+    [avg_revenue_visit] => 38.9375
+)
+Array
+(
+    [species] => cat
+    [animals] => 3
+    [avg_age] => 7.6525748155753
+    [total_visits] => 9
+    [avg_visits] => 3
+    [total_revenue] => 542
+    [avg_revenue_animal] => 180.66666666667
+    [avg_revenue_visit] => 60.222222222222
+)
+Array
+(
+    [species] => turtle
+    [animals] => 1
+    [avg_age] => 4.8216751273861
+    [total_visits] => 2
+    [avg_visits] => 2
+    [total_revenue] => 58
+    [avg_revenue_animal] => 58
+    [avg_revenue_visit] => 29
+)
+Array
+(
+    [species] => papagay
+    [animals] => 1
+    [avg_age] => 2.7107921705073
+    [total_visits] => 1
+    [avg_visits] => 1
+    [total_revenue] => 19
+    [avg_revenue_animal] => 19
+    [avg_revenue_visit] => 19
+)
+Finished!
+```
+
+Please, note that there is a strange output value in the first run, `[species] => dog`. This is because we used the same mapping function for both the ungrouped and grouped runs.
 
 ---
 

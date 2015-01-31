@@ -19,18 +19,24 @@ define('SRC_DIR', EXAMPLE_DIR . '../src/');
 require_once SRC_DIR . 'MapReduce.php';
 
 $pets = [
-	  [ 'name' => 'Bono',  'spices' => 'dog',     'birthday' => '2010-01-01', 'visits' => '3', 'revenue' =>  98.00 ]
-	, [ 'name' => 'Lenny', 'spices' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00 ]
-	, [ 'name' => 'Bruce', 'spices' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00 ]
-	, [ 'name' => 'Sting', 'spices' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00 ]
-	, [ 'name' => 'Jay',   'spices' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00 ]
+	  [ 'name' => 'Bono',  'species' => 'dog',     'birthday' => '2010-01-01', 'visits' => '3', 'revenue' =>  98.00 ]
+	, [ 'name' => 'Lenny', 'species' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00 ]
+	, [ 'name' => 'Bruce', 'species' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00 ]
+	, [ 'name' => 'Sting', 'species' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00 ]
+	, [ 'name' => 'Jay',   'species' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00 ]
+	, [ 'name' => 'Steve', 'species' => 'cat',     'birthday' => '2005-06-22', 'visits' => '3', 'revenue' =>  68.00 ]
+	, [ 'name' => 'Mike',  'species' => 'dog',     'birthday' => '2008-07-21', 'visits' => '2', 'revenue' =>  55.00 ]
+	, [ 'name' => 'Ben',   'species' => 'dog',     'birthday' => '2009-08-16', 'visits' => '2', 'revenue' =>  71.00 ]
+	, [ 'name' => 'Miles', 'species' => 'cat',     'birthday' => '2011-09-14', 'visits' => '4', 'revenue' => 346.00 ]
+	, [ 'name' => 'Jack',  'species' => 'dog',     'birthday' => '2009-10-03', 'visits' => '6', 'revenue' => 244.00 ]
 ];
 
 $input = new ArrayIterator($pets);
 
 $mapper = function ($pet) {
 	return [
-		  'animals'            => 1
+		  'species'            => $pet['species']
+		, 'animals'            => 1
 		, 'avg_age'            => (time() - strtotime($pet['birthday'])) / 60 / 60 / 24 / 365.25
 		, 'total_visits'       => $pet['visits']
 		, 'avg_visits'         => $pet['visits']
@@ -45,6 +51,7 @@ $reducer = function ($new_data, $carry) {
 		return $new_data;
 	}
 	
+	$species            = $carry['species'];
 	$animals            = $carry['animals'] + 1;
 	$avg_age            = ( $carry['avg_age'] * $carry['animals'] + $new_data['avg_age'] ) / $animals;
 	$total_visits       = $carry['total_visits'] + $new_data['total_visits'];
@@ -53,7 +60,7 @@ $reducer = function ($new_data, $carry) {
 	$avg_revenue_animal = $total_revenue / $animals;
 	$avg_revenue_visit  = $total_revenue / $total_visits;
 	
-	return compact('animals', 'avg_age', 'total_visits', 'avg_visits', 'total_revenue', 'avg_revenue_animal', 'avg_revenue_visit');
+	return compact('species', 'animals', 'avg_age', 'total_visits', 'avg_visits', 'total_revenue', 'avg_revenue_animal', 'avg_revenue_visit');
 };
 
 class LogToConsole {
@@ -61,12 +68,19 @@ class LogToConsole {
 		if ( !is_null($data) ) {
 			print_r($data);
 		} else {
-			echo "Finished!";
+			echo "Finished!\n";
 		}
 	}
 }
 
 $output = new LogToConsole();
 
+echo "Getting global data:\n";
 $mapreducer = new MapReduce($input, $mapper, $reducer, $output);
 $mapreducer->run();
+echo "\n";
+
+echo "Getting grouped data:\n";
+$mapreducer = new MapReduce($input, $mapper, $reducer, $output, ['grouped' => true]);
+$mapreducer->run();
+echo "\n";
