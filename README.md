@@ -12,18 +12,20 @@ require_once 'MapReduce.php';
 
 **Set up the input**
 
-The input has to be an implementation of `Traversable`. Classes implementing `Iterator`, `IteratorAggregate`, like `Generator`, work as well. `array`, not being a class, does not work. But fear not, `ArrayIterator` can be used to get the iterator of the array. 
+The input has to be an implementation of `Traversable`. Classes implementing `Iterator` or `IteratorAggregate`, like `Generator`, work as well. `array`, not being a class, does not work. But fear not, `ArrayIterator` can be used to get the iterator of the array. 
 
 In this example, a veterinarian has a list of all the pets they have treated, with many fields for each one:
 
 ```php
 $pets = [
 	  [ 'name' => 'Bono',  'spices' => 'dog',     'birthday' => '2010-01-01', 'visits' => '3', 'revenue' =>  98.00 ]
-	, [ 'name' => 'Lenny', 'spices' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00  ]
-	, [ 'name' => 'Bruce', 'spices' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00  ]
-	, [ 'name' => 'Sting', 'spices' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00  ]
-	, [ 'name' => 'Jay',   'spices' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00  ]
+	, [ 'name' => 'Lenny', 'spices' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00 ]
+	, [ 'name' => 'Bruce', 'spices' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00 ]
+	, [ 'name' => 'Sting', 'spices' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00 ]
+	, [ 'name' => 'Jay',   'spices' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00 ]
 ];
+
+$input = new ArrayIterator($pets);
 ```
 
 Or using the included `CsvReader` class:
@@ -34,7 +36,14 @@ $pets = new CsvReader('pet_data.csv');
 
 **Create the mapping function**
 
-This function which transforms each item in the input into another item, more suitable to be processed in the `reduce` function.
+This function transforms each item in the input into another item, more suitable to be processed in the `reduce` function.
+
+´´´
+     Input #1     Input #2     Input #3     Input #4     Input #5     ...
+       |            |            |            |            |
+       ↓            ↓            ↓            ↓            ↓
+     Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ...
+´´´
 
 Basically, this function is used to pick only the values we are going to use and transform them, if needed, so that they are easily aggregable (or reducible). I.e. convert a date in format YYYY-MM-DD into a decimal number, an address into lat/lng coordinates, etc.
 
@@ -59,6 +68,42 @@ Bear in mind that this function _should_ return the same kind of result that the
 **Create the reducing function**
 
 This function takes two results of the mapping function and creates a new result. This new result will be merged with the next mapped item, and so on until there are no more mapped items and the last result is the output of the algorithm.
+
+How it works now:
+
+´´´
+     null         Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ...
+       |            |            |            |
+       +------------|            |            |
+                    ↓            |            |
+                  Reduced        |            |
+                    |            |            |
+                    +------------|            |
+                                 ↓            |
+                               Reduced        |
+                                 |            |
+                                 +------------|
+                                              ↓
+                                            Reduced 
+´´´
+
+How it might work in future versions:
+
+´´´
+     Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    Mapped #6    ...
+       |            |            |            |            |            |
+       +------------+            +------------+            +------------+
+             ↓                         ↓                         ↓
+           Reduced                   Reduced                   Reduced
+             |                         |                         |
+             +-------------------------+                         +--- - - -
+                          ↓
+                        Reduced
+                          |
+                          +--- - - -
+´´´
+
+Notice that the second method allows for parallelization. But it requires that the `map` function returns items which are "of the same kind" that the reduced items.
 
 ```php
 $reducer = function ($new_data, $carry) {
@@ -107,13 +152,13 @@ class LogToConsole {
 	}
 }
 
-$log = new LogToConsole();
+$output = new LogToConsole();
 ```
 
 **Initialize and run** the Map/Reduce algorithm
 
 ```php
-$mapreducer = new MapReduce(new ArrayIterator($pets), $mapper, $reducer, $log);
+$mapreducer = new MapReduce($input, $mapper, $reducer, $output);
 $mapreducer->run();
 ```
 

@@ -20,11 +20,13 @@ require_once SRC_DIR . 'MapReduce.php';
 
 $pets = [
 	  [ 'name' => 'Bono',  'spices' => 'dog',     'birthday' => '2010-01-01', 'visits' => '3', 'revenue' =>  98.00 ]
-	, [ 'name' => 'Lenny', 'spices' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00  ]
-	, [ 'name' => 'Bruce', 'spices' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00  ]
-	, [ 'name' => 'Sting', 'spices' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00  ]
-	, [ 'name' => 'Jay',   'spices' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00  ]
+	, [ 'name' => 'Lenny', 'spices' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00 ]
+	, [ 'name' => 'Bruce', 'spices' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00 ]
+	, [ 'name' => 'Sting', 'spices' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00 ]
+	, [ 'name' => 'Jay',   'spices' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00 ]
 ];
+
+$input = new ArrayIterator($pets);
 
 $mapper = function ($pet) {
 	return [
@@ -64,7 +66,7 @@ class LogToConsole {
 	}
 }
 
-$log = new LogToConsole();
+$output = new LogToConsole();
 
-$mapreducer = new MapReduce(new ArrayIterator($pets), $mapper, $reducer, $log);
+$mapreducer = new MapReduce($input, $mapper, $reducer, $output);
 $mapreducer->run();
