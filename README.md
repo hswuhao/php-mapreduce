@@ -4,13 +4,13 @@ Implementation of the map/reduce algorithm in PHP.
 
 ## Usage
 
-Include `MapReduce.php` file into your code.
+##### 1. Include `MapReduce.php` file in your code
 
 ```php
 require_once 'MapReduce.php';
 ```
 
-**Set up the input**
+##### 2. Set up the input
 
 The input has to be an implementation of `Traversable`. Classes implementing `Iterator` or `IteratorAggregate`, like `Generator`, work as well. `array`, not being a class, does not work. But fear not, `ArrayIterator` can be used to get the iterator of the array. 
 
@@ -39,7 +39,7 @@ Or using the included `CsvReader` class:
 $pets = new CsvReader('pet_data.csv');
 ```
 
-**Create the mapping function**
+##### 3. Create the mapping function
 
 This function transforms each item in the input into another item, more suitable to be processed with the `reduce` function.
 
@@ -57,7 +57,8 @@ In this example, we want to get: number of animals, average age, total number of
 ```php
 $mapper = function ($pet) {
 	return [
-		  'animals'            => 1
+		  'species'            => $pet['species']
+		, 'animals'            => 1
 		, 'avg_age'            => (time() - strtotime($pet['birthday'])) / 60 / 60 / 24 / 365.25
 		, 'total_visits'       => $pet['visits']
 		, 'avg_visits'         => $pet['visits']
@@ -70,7 +71,7 @@ $mapper = function ($pet) {
 
 Bear in mind that this function _should_ return the same kind of result that the `reduce` function: if an input consisted of just one item, there would be no need to call `reduce` and the result of this `map` function would be the final result of the algorithm.
 
-**Create the reducing function**
+##### 4. Create the reducing function
 
 This function takes two results of the mapping function and creates a new result. This new result will be merged with the next mapped item, and so on until there are no more mapped items and the last result is the output of the algorithm.
 
@@ -116,6 +117,7 @@ $reducer = function ($new_data, $carry) {
 		return $new_data;
 	}
 	
+	$species            = $carry['species'];
 	$animals            = $carry['animals'] + 1;
 	$avg_age            = ( $carry['avg_age'] * $carry['animals'] + $new_data['avg_age'] ) / $animals;
 	$total_visits       = $carry['total_visits'] + $new_data['total_visits'];
@@ -124,11 +126,11 @@ $reducer = function ($new_data, $carry) {
 	$avg_revenue_animal = $total_revenue / $animals;
 	$avg_revenue_visit  = $total_revenue / $total_visits;
 	
-	return compact('animals', 'avg_age', 'total_visits', 'avg_visits', 'total_revenue', 'avg_revenue_animal', 'avg_revenue_visit');
+	return compact('species', 'animals', 'avg_age', 'total_visits', 'avg_visits', 'total_revenue', 'avg_revenue_animal', 'avg_revenue_visit');
 };
 ```
 
-**Set up the output**
+##### 5. Set up the output
 
 The output is an object with a public `send()` method.
 
@@ -160,9 +162,9 @@ class LogToConsole {
 $output = new LogToConsole();
 ```
 
-**Initialize and run** the Map/Reduce algorithm
+##### 6. Initialize and run the Map/Reduce algorithm
 
-If no options are passed to the constructor, only one reduce item is returned... a global aggregator.
+If no options are passed to the constructor, only one reduced item is returned... a global aggregator.
 
 ```php
 echo "Getting global data:\n";
@@ -189,13 +191,15 @@ Array
 Finished!
 ```
 
-If options `grouped` is set to true, one reduce item is returned per group.
+Please, note that there is a strange output value in the first run, `[species] => dog`. This is because we used the same mapping function for both the ungrouped and grouped runs. This should usually not be done.
+
+If options `grouped` is set to true, one reduced item is returned per group.
 
 Groups are defined by the first value of each mapped item (in this case, `species`.)
 
-In the future, this options will probably change to `group by`, which will be either the key of the value to use as group ID or a closure that accepts the mapped item and returns the group ID.
+In the future, this options might change to `group_by`, which will be either `true` for the first value -just like now,- the key of the value to use as group ID or a closure that accepts the mapped item and returns the group ID.
 
-Also, `$options` argument will be moved from constructor to method `run()`.
+Also, `$options` argument will probably be moved from constructor to method `run()`.
 
 ```php
 echo "Getting grouped data:\n";
@@ -206,7 +210,7 @@ echo "\n";
 
 Output is:
 
-```console
+```
 Getting grouped data:
 Array
 (
@@ -255,7 +259,22 @@ Array
 Finished!
 ```
 
-Please, note that there is a strange output value in the first run, `[species] => dog`. This is because we used the same mapping function for both the ungrouped and grouped runs.
+---
+
+## To do
+
+- [ ] document progress callbacks
+- [ ] insurance example: add insured values
+- [ ] insurance example: improve kml output (info, markers)
+- [ ] implement a not-in-memory solution for very big datasets when using groups -optional-
+- [ ] move `$map`, `$reduce`, `$output` and `$options` arguments from constructor to `run()`
+- [ ] add callback to kml writer to get point data (lat/lng, name, description, icon, etc)
+- [ ] make it easy to merge already reduced files -- allow `map` function to be `null`?
+- [ ] accept an array of inputs and process them all in the same batch, one after the other
+- [x] create a kml writer
+- [x] accept an array of outputs
+- [x] create a csv writer
+- [x] create a csv reader
 
 ---
 
