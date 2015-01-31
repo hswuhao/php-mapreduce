@@ -38,12 +38,12 @@ $pets = new CsvReader('pet_data.csv');
 
 This function transforms each item in the input into another item, more suitable to be processed in the `reduce` function.
 
-´´´
+```
      Input #1     Input #2     Input #3     Input #4     Input #5     ...
        |            |            |            |            |
        ↓            ↓            ↓            ↓            ↓
      Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ...
-´´´
+```
 
 Basically, this function is used to pick only the values we are going to use and transform them, if needed, so that they are easily aggregable (or reducible). I.e. convert a date in format YYYY-MM-DD into a decimal number, an address into lat/lng coordinates, etc.
 
@@ -71,7 +71,7 @@ This function takes two results of the mapping function and creates a new result
 
 How it works now:
 
-´´´
+```
 null         Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ...
   |            |            |            |
   +------------|            |            |
@@ -85,11 +85,11 @@ null         Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    ..
                             +------------|
                                          ↓
                                       Reduced 
-´´´
+```
 
 How it might work in future versions:
 
-´´´
+```
 Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    Mapped #6    ...
   |            |            |            |            |            |
   +------------+            +------------+            +------------+
@@ -101,7 +101,7 @@ Mapped #1    Mapped #2    Mapped #3    Mapped #4    Mapped #5    Mapped #6    ..
                   Reduced
                      |
                      +--- - - -
-´´´
+```
 
 Notice that the second method allows for parallelization. But it requires that the `map` function returns items which are "of the same kind" that the reduced items.
 
