@@ -14,7 +14,7 @@
  */
 
 define('EXAMPLE_DIR', dirname(__FILE__) . '/');
-define('SRC_DIR', EXAMPLE_DIR . '../src/');
+define('SRC_DIR', EXAMPLE_DIR . '../../src/');
 
 require_once SRC_DIR . 'MapReduce.php';
 
@@ -30,8 +30,6 @@ $pets = [
 	, [ 'name' => 'Miles', 'species' => 'cat',     'birthday' => '2011-09-14', 'visits' => '4', 'revenue' => 346.00 ]
 	, [ 'name' => 'Jack',  'species' => 'dog',     'birthday' => '2009-10-03', 'visits' => '6', 'revenue' => 244.00 ]
 ];
-
-$input = new ArrayIterator($pets);
 
 $mapper = function ($pet) {
 	return [
@@ -76,11 +74,11 @@ class LogToConsole {
 $output = new LogToConsole();
 
 echo "Getting global data:\n";
-$mapreducer = new MapReduce($input, $mapper, $reducer, $output);
-$mapreducer->run();
+$mapreducer = new MapReduce($pets);
+$mapreducer->run($mapper, $reducer, $output);
 echo "\n";
 
 echo "Getting grouped data:\n";
-$mapreducer = new MapReduce($input, $mapper, $reducer, $output, ['grouped' => true]);
-$mapreducer->run();
+$mapreducer = new MapReduce($pets);
+$mapreducer->run($mapper, $reducer, $output, ['grouped' => true]);
 echo "\n";

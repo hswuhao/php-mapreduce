@@ -20,17 +20,32 @@ class MapReduce {
 	private $reduce = false;
 	private $outputs = false;
 	
-	public function __construct (Traversable $input, Closure $map, Closure $reduce, $outputs, $options = array()) {
+	public function __construct ($input) {
+		if ( is_array($input) ) {
+			$input = new ArrayIterator($input);
+		} else if ( ! $input instanceOf Traversable ) {
+			throw new Exception('Input is not Traversable.');
+		}
 		$this->input = $input;
-		$this->map = $map;
-		$this->reduce = $reduce;
-		$this->outputs = is_array($outputs) ? $outputs : [$outputs];
-		
 		$this->load_defaults();
-		$this->options($options);
 	}
 	
-	public function run () {
+	public function run (Closure $map, Closure $reduce, $outputs, $options = array()) {
+		if ( !is_array($outputs) ) {
+			$outputs = [$outputs];
+		}
+		foreach ( $outputs as $k => $o ) {
+			if ( (! $o instanceOf Generator) && (!method_exists($o, 'send')) ) {
+				throw new Exception("Output #$k is not a Generator and has no 'send' method.");
+			}
+		}
+		
+		$this->map = $map;
+		$this->reduce = $reduce;
+		$this->outputs = $outputs;
+		
+		$this->options($options);
+		
 		// $this->map($data) does not work :(
 		// http://stackoverflow.com/questions/5605404/calling-anonymous-functions-defined-as-object-variables-in-php
 		$func_map = $this->map;

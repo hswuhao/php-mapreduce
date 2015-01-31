@@ -1,6 +1,6 @@
 <?php
 define('EXAMPLE_DIR', dirname(__FILE__) . '/');
-define('SRC_DIR', EXAMPLE_DIR . '../src/');
+define('SRC_DIR', EXAMPLE_DIR . '../../src/');
 
 require_once SRC_DIR . 'CsvReader.php';
 require_once SRC_DIR . 'CsvWriter.php';
@@ -10,8 +10,8 @@ require_once SRC_DIR . 'MapReduce.php';
 // Sample data downloaded from SpatialKey. See README.
 $input = new CsvReader(EXAMPLE_DIR . 'FL_insurance_sample.csv');
 
-$output1 = new CsvWriter(EXAMPLE_DIR . 'output.csv', [ 'overwrite' => 1 ]);
-$output2 = new KmlWriter(EXAMPLE_DIR . 'output.kml', [ 'overwrite' => 1 ]);
+$output_csv = new CsvWriter(EXAMPLE_DIR . 'output.csv', [ 'overwrite' => 1 ]);
+$output_kml = new KmlWriter(EXAMPLE_DIR . 'output.kml', [ 'overwrite' => 1 ]);
 
 $map = function ($row) {
 	$ret = array (
@@ -53,5 +53,6 @@ $progress = function ($type, $data = null) {
 };
 
 MapReduce::$defaults['grouped'] = true;
-$parser = new MapReduce($input, $map, $reduce, [$output1, $output2], array( 'progress_callback' => $progress ));
-$parser->parse();
+MapReduce::$defaults['progress_callback'] = $progress;
+$parser = new MapReduce($input);
+$parser->run($map, $reduce, [$output_csv, $output_kml]);
