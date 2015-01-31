@@ -74,11 +74,11 @@ class LogToConsole {
 $output = new LogToConsole();
 
 echo "Getting global data:\n";
-$mapreducer = new MapReduce($pets);
-$mapreducer->run($mapper, $reducer, $output);
+$mapreducer = new MapReduce($pets, $mapper, $reducer, $output);
+$mapreducer->run();
 echo "\n";
 
 echo "Getting grouped data:\n";
-$mapreducer = new MapReduce($pets);
-$mapreducer->run($mapper, $reducer, $output, ['grouped' => true]);
+$mapreducer = new MapReduce($pets, $mapper, $reducer, $output, ['grouped' => true]);
+$mapreducer->run();
 echo "\n";

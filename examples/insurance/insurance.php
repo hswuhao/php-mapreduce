@@ -54,5 +54,5 @@ $progress = function ($type, $data = null) {
 
 MapReduce::$defaults['grouped'] = true;
 MapReduce::$defaults['progress_callback'] = $progress;
-$parser = new MapReduce($input);
-$parser->run($map, $reduce, [$output_csv, $output_kml]);
+$parser = new MapReduce($input, $map, $reduce, [$output_csv, $output_kml]);
+$parser->run();

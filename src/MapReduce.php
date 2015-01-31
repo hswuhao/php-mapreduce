@@ -20,17 +20,13 @@ class MapReduce {
 	private $reduce = false;
 	private $outputs = false;
 	
-	public function __construct ($input) {
+	public function __construct ($input, Closure $map, Closure $reduce, $outputs, $options = array()) {
 		if ( is_array($input) ) {
 			$input = new ArrayIterator($input);
 		} else if ( ! $input instanceOf Traversable ) {
 			throw new Exception('Input is not Traversable.');
 		}
-		$this->input = $input;
-		$this->load_defaults();
-	}
-	
-	public function run (Closure $map, Closure $reduce, $outputs, $options = array()) {
+		
 		if ( !is_array($outputs) ) {
 			$outputs = [$outputs];
 		}
@@ -40,17 +36,21 @@ class MapReduce {
 			}
 		}
 		
+		$this->input = $input;
 		$this->map = $map;
 		$this->reduce = $reduce;
 		$this->outputs = $outputs;
 		
+		$this->load_defaults();
 		$this->options($options);
-		
+	}
+	
+	public function run () {
 		// $this->map($data) does not work :(
 		// http://stackoverflow.com/questions/5605404/calling-anonymous-functions-defined-as-object-variables-in-php
 		$func_map = $this->map;
 		$func_reduce = $this->reduce;
-		$func_progress = $this->options('progress_callback') !== false ? $this->options('progress_callback') : function () {};
+		$func_progress = $this->options('progress_callback') instanceOf Closure ? $this->options('progress_callback') : function () {};
 		
 		$reduced = array();
 		
@@ -90,9 +90,7 @@ class MapReduce {
 			}
 		}
 		
-		if ( $func_progress !== false ) {
-			$func_progress(self::progress_finish, $numlines);
-		}
+		$func_progress(self::progress_finish, $numlines);
 		
 		foreach ( $reduced as $row ) {
 			foreach ( $this->outputs as $out ) {
