@@ -18,13 +18,15 @@ define('SRC_DIR', EXAMPLE_DIR . '../../src/');
 
 require_once SRC_DIR . 'MapReduce.php';
 
-$pets = [
+$pets1 = [
 	  [ 'name' => 'Bono',  'species' => 'dog',     'birthday' => '2010-01-01', 'visits' => '3', 'revenue' =>  98.00 ]
 	, [ 'name' => 'Lenny', 'species' => 'cat',     'birthday' => '2005-02-12', 'visits' => '2', 'revenue' => 128.00 ]
 	, [ 'name' => 'Bruce', 'species' => 'dog',     'birthday' => '2008-03-31', 'visits' => '3', 'revenue' => 155.00 ]
 	, [ 'name' => 'Sting', 'species' => 'turtle',  'birthday' => '2010-04-06', 'visits' => '2', 'revenue' =>  58.00 ]
 	, [ 'name' => 'Jay',   'species' => 'papagay', 'birthday' => '2012-05-16', 'visits' => '1', 'revenue' =>  19.00 ]
-	, [ 'name' => 'Steve', 'species' => 'cat',     'birthday' => '2005-06-22', 'visits' => '3', 'revenue' =>  68.00 ]
+];
+$pets2 = [
+	  [ 'name' => 'Steve', 'species' => 'cat',     'birthday' => '2005-06-22', 'visits' => '3', 'revenue' =>  68.00 ]
 	, [ 'name' => 'Mike',  'species' => 'dog',     'birthday' => '2008-07-21', 'visits' => '2', 'revenue' =>  55.00 ]
 	, [ 'name' => 'Ben',   'species' => 'dog',     'birthday' => '2009-08-16', 'visits' => '2', 'revenue' =>  71.00 ]
 	, [ 'name' => 'Miles', 'species' => 'cat',     'birthday' => '2011-09-14', 'visits' => '4', 'revenue' => 346.00 ]
@@ -74,11 +76,11 @@ class LogToConsole {
 $output = new LogToConsole();
 
 echo "Getting global data:\n";
-$mapreducer = new MapReduce($pets, $mapper, $reducer, $output);
+$mapreducer = new MapReduce([$pets1, $pets2], $mapper, $reducer, $output);
 $mapreducer->run();
 echo "\n";
 
 echo "Getting grouped data:\n";
-$mapreducer = new MapReduce($pets, $mapper, $reducer, $output, ['grouped' => true]);
+$mapreducer = new MapReduce([$pets1, $pets2], $mapper, $reducer, $output, ['grouped' => true]);
 $mapreducer->run();
 echo "\n";
