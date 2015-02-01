@@ -4,9 +4,11 @@ require_once 'WithOptions.php';
 class MapReduce {
 	use WithOptions;
 	
-	const progress_start   = 0;
-	const progress_numline = 1;
-	const progress_finish  = 2;
+	const progress_start        = 0;
+	const progress_start_input  = 1;
+	const progress_numline      = 2;
+	const progress_finish_input = 3;
+	const progress_finish       = 4;
 	
 	public static $defaults = array (
 		'in_memory' => true, // not used
@@ -15,20 +17,22 @@ class MapReduce {
 		'progress_each' => 10000,
 	);
 	
-	private $input = false;
+	private $inputs = false;
 	private $map = false;
 	private $reduce = false;
 	private $outputs = false;
 	
-	public function __construct ($input, Closure $map, Closure $reduce, $outputs, $options = array()) {
-		if ( is_array($input) ) {
-			$input = new ArrayIterator($input);
+	public function __construct ($inputs, Closure $map, Closure $reduce, $outputs, $options = array()) {
+		if ( is_array($inputs) ) {
+			if ( ! reset($inputs) instanceOf Traversable ) {
+				$inputs = [ $inputs ];
+			}
 		} else if ( ! $input instanceOf Traversable ) {
 			throw new Exception('Input is not Traversable.');
 		}
 		
 		if ( !is_array($outputs) ) {
-			$outputs = [$outputs];
+			$outputs = [ $outputs ];
 		}
 		foreach ( $outputs as $k => $o ) {
 			if ( (! $o instanceOf Generator) && (!method_exists($o, 'send')) ) {
@@ -36,7 +40,7 @@ class MapReduce {
 			}
 		}
 		
-		$this->input = $input;
+		$this->inputs = $inputs;
 		$this->map = $map;
 		$this->reduce = $reduce;
 		$this->outputs = $outputs;
@@ -51,54 +55,63 @@ class MapReduce {
 		$func_map = $this->map;
 		$func_reduce = $this->reduce;
 		$func_progress = $this->options('progress_callback') instanceOf Closure ? $this->options('progress_callback') : function () {};
+		$func_key = false;
 		
 		$reduced = array();
 		
 		$func_progress(self::progress_start);
-		
 		$numlines = 0;
-		foreach ( $this->input as $row ) {
-			$numlines += 1;
-			//if ( $numlines > 1000 ) {
-			//	break;
-			//}
+		
+		foreach ( $this->inputs as $k => $input ) {
+			$func_progress(self::progress_start_input, $k);
+			$numlines_input = 0;
 			
-			if ( $func_progress !== false && $numlines % $this->options('progress_each') == 0 ) {
-				$func_progress(self::progress_numline, $numlines);
-			}
-			
-			$mapped = $func_map($row);
-			if ( $mapped === null ) {
-				continue;
-			}
-			
-			assert( is_array($mapped), 'Returned value from map() is not an array.' );
-			assert( count($mapped) > 0, 'Returned array from map() is empty.' );
-			
-			// since give the possibility to return several values to be reduced,
-			// if returned value is not an array of array, we make it
-			if ( !is_array(reset($mapped)) ) {
-				$mapped = array($mapped);
-			}
-			
-			foreach ( $mapped as $row2 ) {
-				assert( is_array($row2), 'One of the returned values from map() is not an array.' );
-				assert( count($row2) > 0, 'One of the returned arrays from map() is empty.' );
+			foreach ( $input as $row ) {
+				$numlines += 1;
+				//if ( $numlines > 1000 ) {
+				//	break;
+				//}
 				
-				$key = $this->options('grouped') ? reset($row2) : '_no_key_';
-				$reduced[$key] = $func_reduce($row2, isset($reduced[$key]) ? $reduced[$key] : null);
+				if ( $numlines_input % $this->options('progress_each') == 0 ) {
+					$func_progress(self::progress_numline, $k, $numlines, $numlines_input);
+				}
+				
+				$mapped = $func_map($row);
+				if ( $mapped === null ) {
+					continue;
+				}
+				
+				$key = '__no_key__';
+				if ( $this->options('group_by') === true ) {
+					$key = reset($mapped);
+				} else if ( $this->options('group_by') instanceOf Closure ) {
+					if ( $func_key === false ) {
+						$func_key = $this->options('group_by');
+					}
+					$key = $func_key($mapped);
+				} else if ( $this->options('group_by') !== false ) {
+					// check for key
+					$key = $mapped[$key];
+				}
+				if ( !isset($reduced[$key]) ) {
+					$reduced[$key] = $mapped;
+				} else {
+					$reduced[$key] = $func_reduce($mapped, $reduced[$key]);
+				}
 			}
+			
+			$func_progress(self::progress_finish_input, $k, $numlines, $numlines_input);
 		}
 		
 		$func_progress(self::progress_finish, $numlines);
 		
 		foreach ( $reduced as $row ) {
-			foreach ( $this->outputs as $out ) {
-				$out->send($row);
+			foreach ( $this->outputs as $output ) {
+				$output->send($row);
 			}
 		}
-		foreach ( $this->outputs as $out ) {
-			$out->send(null);
+		foreach ( $this->outputs as $output ) {
+			$output->send(null);
 		}
 	}
 }
