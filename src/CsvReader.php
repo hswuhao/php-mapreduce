@@ -38,14 +38,18 @@ class CsvReader implements IteratorAggregate {
 		$this->inputfile = $inputfile;
 		$this->load_defaults();
 		$this->options($options);
+        if ( (!is_resource($this->inputfile)) && (!file_exists($this->inputfile)) ) {
+			throw new Exception('Input file does not exist: ' . $this->inputfile);
+        }
 	}
 	
+    private static function is_empty ($array) {
+        return count($array) == 1 && ( $array[0] === null || trim($array[0]) === '' );
+    }
+
+    
 	private function getLines () {
-		function is_empty ($array) {
-			return count($array) == 1 && ( $array[0] === null || trim($array[0]) === '' );
-		}
-		
-		$fh = fopen($this->inputfile, 'r');
+		$fh = is_resource($this->inputfile) ? $this->inputfile : @fopen($this->inputfile, 'r');
 		if ( !$fh ) {
 			throw new Exception('Could not open input file ' . $this->inputfile);
 		}
@@ -54,13 +58,16 @@ class CsvReader implements IteratorAggregate {
 		while ( !feof($fh) ) {
 			if ( $headers === false && $this->options('with_headers') ) {
 				$headers = fgetcsv($fh, 0, $this->options('separator'), $this->options('delimiter'), $this->options('escape'));
-				if ( is_empty($headers) ) {
+				if ( self::is_empty($headers) ) {
+                    if ( feof($fh) ) {
+                        break;
+                    }
 					throw new Exception('Empty headers line in file ' . $this->inputfile);
 				}
 			}
 			
 			$row = fgetcsv ($fh, 0, $this->options('separator'), $this->options('delimiter'), $this->options('escape'));
-			if ( is_empty($row) ) {
+			if ( self::is_empty($row) ) {
 				if ( $this->options('stop_on_blank') ) {
 					break;
 				}
