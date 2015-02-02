@@ -7,15 +7,19 @@
  *  - call $this->options(...) to get/set options
  */
 trait WithOptions {
-	protected $opts = array();
+	protected $opts = null;
+	
+	public static function get_defaults () {
+		return isset(static::$defaults) ? static::$defaults : null;
+	}
 	
 	// reads options from static::$defaults, if it exists
 	// $clear (boolean): if true, options are emptied before
-	public function load_defaults ($clear = false) {
+	private function load_defaults ($clear = false) {
+		if ( $clear ) {
+			$this->opts = array();
+		}
 		if ( isset(static::$defaults) ) {
-			if ( $clear ) {
-				$this->opts = array();
-			}
 			foreach ( static::$defaults as $k => $v ) {
 				$this->opts[$k] = $v;
 			}
@@ -31,6 +35,10 @@ trait WithOptions {
 	 *  4) array / whatever --> sets options according to each key => value of the array
      */
 	public function options ($key = null, $value = null) {
+		if ( is_null($this->opts) ) {
+			$this->load_defaults(true);
+		}
+		
 		if ( $key === null ) {
 			// 1
 			return $this->opts;
@@ -38,6 +46,9 @@ trait WithOptions {
 		if ( !is_array($key) ) {
 			if ( $value === null ) {
 				// 2
+				if ( !isset($this->opts[$key]) ) {
+					throw new Exception("Option $key does not exist.");
+				}
 				return $this->opts[$key];
 			} else {
 				// 3
@@ -47,7 +58,9 @@ trait WithOptions {
 		}
 		// 4
 		foreach ( $key as $k => $v ) {
-			assert( isset($this->opts[$k]), "Wrong options key: $k" );
+			if ( !isset($this->opts[$k]) ) {
+				throw new Exception("Option $k does not exist.");
+			}
 			$this->opts[$k] = $v;
 		}
 	}
