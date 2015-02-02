@@ -17,6 +17,7 @@ $map = function ($row) {
 	$ret = array (
 		'state_county' => $row['statecode'] . ' - ' . preg_replace('/\s+/', ' ', ucwords(strtolower($row['county']))),
 		'name' => $row['statecode'] . ' - ' . preg_replace('/\s+/', ' ', ucwords(strtolower($row['county']))),
+		'count' => 1,
 		'lat' => $row['point_latitude'],
 		'lng' => $row['point_longitude'],
 	);
@@ -38,21 +39,39 @@ $reduce = function ($new, $carry) {
 	return $reduced;
 };
 
-$progress = function ($type, $data = null) {
+class LogToConsole {
+	public function send ($data) {
+		if ( !is_null($data) ) {
+			print_r($data);
+		} else {
+			echo "Finished!\n";
+		}
+	}
+}
+
+$logger = new LogToConsole();
+
+$progress = function ($type, $input = null, $numlines = null, $numlines_input = null) {
 	switch ($type) {
-		case MapReduce::progress_start:
+		case MapReduce::PROGRESS_START:
 			echo "Start...\n";
 			break;
-		case MapReduce::progress_numline:
-			echo " - Line: $data\n";
+		case MapReduce::PROGRESS_START_INPUT:
+			echo "Start input " . (preg_match('/^\d+$/', $input) ? "#$input" : $input) . "...\n";
 			break;
-		case MapReduce::progress_finish:
-			echo " - Finished at line $data\n";
+		case MapReduce::PROGRESS_NUMLINE:
+			echo " - Line: $numlines_input\n";
+			break;
+		case MapReduce::PROGRESS_FINISH_INPUT:
+			echo " - Finished input " . (preg_match('/^\d+$/', $input) ? "#$input" : $input) . ". Lines read: $numlines_input. Total: $numlines.\n";
+			break;
+		case MapReduce::PROGRESS_FINISH:
+			echo " - Finished. Total lines read: $numlines.\n";
 			break;
 	}
 };
 
-MapReduce::$defaults['grouped'] = true;
+MapReduce::$defaults['group_by'] = true;
 MapReduce::$defaults['progress_callback'] = $progress;
-$parser = new MapReduce($input, $map, $reduce, [$output_csv, $output_kml]);
+$parser = new MapReduce($input, $map, $reduce, [$output_csv, $output_kml /* , $logger */ ]);
 $parser->run();

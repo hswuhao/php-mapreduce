@@ -4,15 +4,15 @@ require_once 'WithOptions.php';
 class MapReduce {
 	use WithOptions;
 	
-	const progress_start        = 0;
-	const progress_start_input  = 1;
-	const progress_numline      = 2;
-	const progress_finish_input = 3;
-	const progress_finish       = 4;
+	const PROGRESS_START        = 0;
+	const PROGRESS_START_INPUT  = 1;
+	const PROGRESS_NUMLINE      = 2;
+	const PROGRESS_FINISH_INPUT = 3;
+	const PROGRESS_FINISH       = 4;
 	
 	public static $defaults = array (
 		'in_memory' => true, // not used
-		'grouped' => false,
+		'group_by' => false,
 		'progress_callback' => false,
 		'progress_each' => 10000,
 	);
@@ -23,14 +23,22 @@ class MapReduce {
 	private $outputs = false;
 	
 	public function __construct ($inputs, Closure $map, Closure $reduce, $outputs, $options = array()) {
-		if ( is_array($inputs) ) {
-			if ( ! reset($inputs) instanceOf Traversable ) {
+		// array of Traversable --> ok
+        // array of array --> ok
+        // array of anything else --> convert to [ $inputs ]
+        // Traversable --> convert to [ $inputs ]
+        // throw error
+        
+        if ( is_array($inputs) ) {
+			if ( (! is_array(reset($inputs))) && (! reset($inputs) instanceOf Traversable) ) {
 				$inputs = [ $inputs ];
 			}
-		} else if ( ! $input instanceOf Traversable ) {
+		} else if ( $inputs instanceOf Traversable ) {
+				$inputs = [ $inputs ];
+        } else {
 			throw new Exception('Input is not Traversable.');
 		}
-		
+        
 		if ( !is_array($outputs) ) {
 			$outputs = [ $outputs ];
 		}
@@ -59,21 +67,22 @@ class MapReduce {
 		
 		$reduced = array();
 		
-		$func_progress(self::progress_start);
+		$func_progress(self::PROGRESS_START);
 		$numlines = 0;
 		
 		foreach ( $this->inputs as $k => $input ) {
-			$func_progress(self::progress_start_input, $k);
+			$func_progress(self::PROGRESS_START_INPUT, $k);
 			$numlines_input = 0;
 			
 			foreach ( $input as $row ) {
 				$numlines += 1;
+                $numlines_input += 1;
 				//if ( $numlines > 1000 ) {
 				//	break;
 				//}
 				
-				if ( $numlines_input % $this->options('progress_each') == 0 ) {
-					$func_progress(self::progress_numline, $k, $numlines, $numlines_input);
+				if ( $numlines_input > 0 && $numlines_input % $this->options('progress_each') == 0 ) {
+					$func_progress(self::PROGRESS_NUMLINE, $k, $numlines, $numlines_input);
 				}
 				
 				$mapped = $func_map($row);
@@ -91,7 +100,7 @@ class MapReduce {
 					$key = $func_key($mapped);
 				} else if ( $this->options('group_by') !== false ) {
 					// check for key
-					$key = $mapped[$key];
+					$key = $mapped[ $this->options('group_by') ];
 				}
 				if ( !isset($reduced[$key]) ) {
 					$reduced[$key] = $mapped;
@@ -100,10 +109,10 @@ class MapReduce {
 				}
 			}
 			
-			$func_progress(self::progress_finish_input, $k, $numlines, $numlines_input);
+			$func_progress(self::PROGRESS_FINISH_INPUT, $k, $numlines, $numlines_input);
 		}
 		
-		$func_progress(self::progress_finish, $numlines);
+		$func_progress(self::PROGRESS_FINISH, null, $numlines);
 		
 		foreach ( $reduced as $row ) {
 			foreach ( $this->outputs as $output ) {

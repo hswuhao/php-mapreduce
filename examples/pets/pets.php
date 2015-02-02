@@ -37,7 +37,7 @@ $mapper = function ($pet) {
 	return [
 		  'species'            => $pet['species']
 		, 'animals'            => 1
-		, 'avg_age'            => (time() - strtotime($pet['birthday'])) / 60 / 60 / 24 / 365.25
+		, 'avg_age'            => (@time('Europe/Vienna') - strtotime($pet['birthday'])) / 60 / 60 / 24 / 365.25
 		, 'total_visits'       => $pet['visits']
 		, 'avg_visits'         => $pet['visits']
 		, 'total_revenue'      => $pet['revenue']
@@ -46,6 +46,7 @@ $mapper = function ($pet) {
 	];
 };
 
+date_default_timezone_set ('Europe/Vienna');
 $reducer = function ($new_data, $carry) {
 	if ( is_null($carry) ) {
 		return $new_data;
@@ -81,6 +82,6 @@ $mapreducer->run();
 echo "\n";
 
 echo "Getting grouped data:\n";
-$mapreducer = new MapReduce([$pets1, $pets2], $mapper, $reducer, $output, ['grouped' => true]);
+$mapreducer = new MapReduce([$pets1, $pets2], $mapper, $reducer, $output, ['group_by' => 'species']);
 $mapreducer->run();
 echo "\n";
