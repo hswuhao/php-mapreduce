@@ -1,25 +1,7 @@
 <?php
+require_once dirname(__FILE__) . '/../src/autoloader.php';
 
 class CsvReaderTest extends PHPUnit_Framework_TestCase {
-    // ...
-    /*
-        things to test:
-            - option 'with_headers'
-                - set to true, feed with headers
-                - set to true, feed with no headers
-                - set to false, feed with headers
-                - set to false, feed with no headers
-            - options 'separator', 'delimiter' and 'escape'
-                - set to ',', '"', '"', feed correct data
-                - set to ',', '"', '"', feed wrong data
-                - set to ';', '"', '"', feed correct data
-                - set to ';', '"', '"', feed wrong data
-                - tres double '"' inside a field
-            - option 'stop_on_blank'
-                - set to true, feed with blank
-                - set to false, feed with blank
-    */
-    
     static protected function createTmp ($text) {
         $fh = tmpfile();
         if ( !$fh ) {
@@ -103,5 +85,259 @@ class CsvReaderTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(6, $count);
     }
     
-    // ...
+	public function testCommasNoQuotes () {
+        $data = [
+            'h1,h2,h3,h4',
+            'a1,b1,c1,d1',
+            'a2,b2,c2,d2',
+        ];
+        
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals('h1', $keys[0]);
+			$this->assertEquals('h2', $keys[1]);
+			$this->assertEquals('h3', $keys[2]);
+			$this->assertEquals('h4', $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('a1', $row['h1']);
+				$this->assertEquals('b1', $row['h2']);
+				$this->assertEquals('c1', $row['h3']);
+				$this->assertEquals('d1', $row['h4']);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a2', $row['h1']);
+				$this->assertEquals('b2', $row['h2']);
+				$this->assertEquals('c2', $row['h3']);
+				$this->assertEquals('d2', $row['h4']);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh, [ 'with_headers' => false ]);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals(0, $keys[0]);
+			$this->assertEquals(1, $keys[1]);
+			$this->assertEquals(2, $keys[2]);
+			$this->assertEquals(3, $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('h1', $row[0]);
+				$this->assertEquals('h2', $row[1]);
+				$this->assertEquals('h3', $row[2]);
+				$this->assertEquals('h4', $row[3]);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a1', $row[0]);
+				$this->assertEquals('b1', $row[1]);
+				$this->assertEquals('c1', $row[2]);
+				$this->assertEquals('d1', $row[3]);
+			} else if ( $k == 2 ) {
+				$this->assertEquals('a2', $row[0]);
+				$this->assertEquals('b2', $row[1]);
+				$this->assertEquals('c2', $row[2]);
+				$this->assertEquals('d2', $row[3]);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+	}
+	
+	public function testCommasQuotes () {
+        $data = [
+            '"h1","h2","h3","h4"',
+            '"a1","b1","c1","d1"',
+            '"a2","b2","c2","d2"',
+        ];
+        
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals('h1', $keys[0]);
+			$this->assertEquals('h2', $keys[1]);
+			$this->assertEquals('h3', $keys[2]);
+			$this->assertEquals('h4', $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('a1', $row['h1']);
+				$this->assertEquals('b1', $row['h2']);
+				$this->assertEquals('c1', $row['h3']);
+				$this->assertEquals('d1', $row['h4']);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a2', $row['h1']);
+				$this->assertEquals('b2', $row['h2']);
+				$this->assertEquals('c2', $row['h3']);
+				$this->assertEquals('d2', $row['h4']);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh, [ 'with_headers' => false ]);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals(0, $keys[0]);
+			$this->assertEquals(1, $keys[1]);
+			$this->assertEquals(2, $keys[2]);
+			$this->assertEquals(3, $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('h1', $row[0]);
+				$this->assertEquals('h2', $row[1]);
+				$this->assertEquals('h3', $row[2]);
+				$this->assertEquals('h4', $row[3]);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a1', $row[0]);
+				$this->assertEquals('b1', $row[1]);
+				$this->assertEquals('c1', $row[2]);
+				$this->assertEquals('d1', $row[3]);
+			} else if ( $k == 2 ) {
+				$this->assertEquals('a2', $row[0]);
+				$this->assertEquals('b2', $row[1]);
+				$this->assertEquals('c2', $row[2]);
+				$this->assertEquals('d2', $row[3]);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+	}
+	
+	public function testCommasSomeQuotes () {
+        $data = [
+            'h1,"h2","h3",h4',
+            '"a1",b1,"c1","d1"',
+            '"a2","b2",c2,"d2"',
+        ];
+        
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals('h1', $keys[0]);
+			$this->assertEquals('h2', $keys[1]);
+			$this->assertEquals('h3', $keys[2]);
+			$this->assertEquals('h4', $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('a1', $row['h1']);
+				$this->assertEquals('b1', $row['h2']);
+				$this->assertEquals('c1', $row['h3']);
+				$this->assertEquals('d1', $row['h4']);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a2', $row['h1']);
+				$this->assertEquals('b2', $row['h2']);
+				$this->assertEquals('c2', $row['h3']);
+				$this->assertEquals('d2', $row['h4']);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh, [ 'with_headers' => false ]);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals(0, $keys[0]);
+			$this->assertEquals(1, $keys[1]);
+			$this->assertEquals(2, $keys[2]);
+			$this->assertEquals(3, $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('h1', $row[0]);
+				$this->assertEquals('h2', $row[1]);
+				$this->assertEquals('h3', $row[2]);
+				$this->assertEquals('h4', $row[3]);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a1', $row[0]);
+				$this->assertEquals('b1', $row[1]);
+				$this->assertEquals('c1', $row[2]);
+				$this->assertEquals('d1', $row[3]);
+			} else if ( $k == 2 ) {
+				$this->assertEquals('a2', $row[0]);
+				$this->assertEquals('b2', $row[1]);
+				$this->assertEquals('c2', $row[2]);
+				$this->assertEquals('d2', $row[3]);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+	}
+	
+	public function testCommasDoubleQuotes () {
+        $data = [
+            '"h""1","h2","h3","h4"',
+            'a1,"b""1","""c1",d1',
+            'a2,b2,"c2""",d2',
+        ];
+        
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals('h"1', $keys[0]);
+			$this->assertEquals('h2', $keys[1]);
+			$this->assertEquals('h3', $keys[2]);
+			$this->assertEquals('h4', $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('a1', $row['h"1']);
+				$this->assertEquals('b"1', $row['h2']);
+				$this->assertEquals('"c1', $row['h3']);
+				$this->assertEquals('d1', $row['h4']);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a2', $row['h"1']);
+				$this->assertEquals('b2', $row['h2']);
+				$this->assertEquals('c2"', $row['h3']);
+				$this->assertEquals('d2', $row['h4']);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+        $fh = self::createTmp($data);
+        $reader = new CsvReader($fh, [ 'with_headers' => false ]);
+        foreach ( $reader as $k => $row ) {
+			$keys = array_keys($row);
+			$this->assertEquals(4, count($keys));
+			$this->assertEquals(0, $keys[0]);
+			$this->assertEquals(1, $keys[1]);
+			$this->assertEquals(2, $keys[2]);
+			$this->assertEquals(3, $keys[3]);
+			
+			if ( $k == 0 ) {
+				$this->assertEquals('h"1', $row[0]);
+				$this->assertEquals('h2', $row[1]);
+				$this->assertEquals('h3', $row[2]);
+				$this->assertEquals('h4', $row[3]);
+			} else if ( $k == 1 ) {
+				$this->assertEquals('a1', $row[0]);
+				$this->assertEquals('b"1', $row[1]);
+				$this->assertEquals('"c1', $row[2]);
+				$this->assertEquals('d1', $row[3]);
+			} else if ( $k == 2 ) {
+				$this->assertEquals('a2', $row[0]);
+				$this->assertEquals('b2', $row[1]);
+				$this->assertEquals('c2"', $row[2]);
+				$this->assertEquals('d2', $row[3]);
+			} else {
+				throw new Exception('Wrong number of lines.');
+			}
+        }
+		
+	}
 }
