@@ -1,7 +1,17 @@
 <?php
 require_once dirname(__FILE__) . '/../src/autoloader.php';
 
-class CsvReaderTest extends PHPUnit_Framework_TestCase {
+class MapReduceTest extends PHPUnit_Framework_TestCase {
+	/*
+		things to test:
+		 - input: array of values, array of arrays, traversable, array of traversable, other, array of other
+		 - map: closure, null, other
+		 - reduce: closure, null, other, not called if only one mapped item
+		 - output: generator, generatoraggreagtor, array of generator or generatoraggregator, other, array of other
+		 - option group_by
+		 - options progress_*
+	 */
+	
     static protected function createTmp ($text) {
         $fh = tmpfile();
         if ( !$fh ) {

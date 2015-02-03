@@ -44,12 +44,22 @@ class WithOptionsTest extends PHPUnit_Framework_TestCase {
 		}
 	}
 	
-	public function testChangeDefaults () {
-	}
-	
-	public function testValues () {
-	}
-	
 	public function testChangeValues () {
+		$defs = WithOptionsStub_Defs::get_defaults();
+        $this->assertSame(7, WithOptionsStub_Defs::$defaults['key_number']);
+        $this->assertSame(7, $defs['key_number']);
+		
+		$obj = new WithOptionsStub_Defs();
+        $this->assertSame(7, $obj->options('key_number'));
+		
+        WithOptionsStub_Defs::$defaults['key_number'] = 6;
+        $this->assertSame(7, $obj->options('key_number'));
+		
+		$defs = WithOptionsStub_Defs::get_defaults();
+        $this->assertSame(6, WithOptionsStub_Defs::$defaults['key_number']);
+        $this->assertSame(6, $defs['key_number']);
+		
+		$obj = new WithOptionsStub_Defs();
+        $this->assertSame(6, $obj->options('key_number'));
 	}
 }

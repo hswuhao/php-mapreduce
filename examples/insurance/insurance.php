@@ -14,29 +14,43 @@ $output_csv = new CsvWriter(EXAMPLE_DIR . 'output.csv', [ 'overwrite' => 1 ]);
 $output_kml = new KmlWriter(EXAMPLE_DIR . 'output.kml', [ 'overwrite' => 1 ]);
 
 $map = function ($row) {
-	$ret = array (
-		'state_county' => $row['statecode'] . ' - ' . preg_replace('/\s+/', ' ', ucwords(strtolower($row['county']))),
-		'name' => $row['statecode'] . ' - ' . preg_replace('/\s+/', ' ', ucwords(strtolower($row['county']))),
-		'count' => 1,
-		'lat' => $row['point_latitude'],
-		'lng' => $row['point_longitude'],
-	);
-	return $ret;
+	return [
+		'state'          => $row['statecode'],
+		'county'         => preg_replace('/\s+/', ' ', ucwords(strtolower($row['county']))),
+		'name'           => preg_replace('/\s+/', ' ', ucwords(strtolower($row['county']))) . ', ' . $row['statecode'],
+		'count'          => 1,
+		'lat'            => $row['point_latitude'] / 1,
+		'lng'            => $row['point_longitude'] / 1,
+		'total_tiv_2011' => $row['tiv_2011'] / 1,
+		'avg_tiv_2011'   => $row['tiv_2011'] / 1,
+		'total_tiv_2012' => $row['tiv_2012'] / 1,
+		'avg_tiv_2012'   => $row['tiv_2012'] / 1,
+		'diff_2011_2012' => $row['tiv_2012'] / $row['tiv_2011'] - 1,
+	];
 };
 
 // $new is the new data to be aggregated
 // $carry is the previous data or null if this is the first call
 // returns the data to be passed to the new call of the function or to be exported if this is the last call
-$reduce = function ($new, $carry) {
-	if ( !$carry ) {
-		return array_merge($new, array('count' => 1));
-	}
-	
-	$reduced = $carry;
-	$reduced['count'] += 1;
-	$reduced['lat'] = ( ($carry['lat'] * $carry['count']) + $new['lat']) / $reduced['count'];
-	$reduced['lng'] = ( ($carry['lng'] * $carry['count']) + $new['lng']) / $reduced['count'];
-	return $reduced;
+$reduce = function ($a, $b) {
+	$count = $a['count'] + $b['count'];
+	return [
+		'state'          => $a['state'],
+		'county'         => $a['county'],
+		'name'           => $a['name'],
+		'count'          => $count,
+		'lat'            => ($a['lat'] * $a['count'] + $b['lat'] * $b['count']) / $count,
+		'lng'            => ($a['lng'] * $a['count'] + $b['lng'] * $b['count']) / $count,
+		'total_tiv_2011' => $a['total_tiv_2011'] + $b['total_tiv_2011'],
+		'avg_tiv_2011'   => ($a['total_tiv_2011'] + $b['total_tiv_2011']) / $count,
+		'total_tiv_2012' => $a['total_tiv_2012'] + $b['total_tiv_2012'],
+		'avg_tiv_2012'   => ($a['total_tiv_2012'] + $b['total_tiv_2012']) / $count,
+		'diff_2011_2012' => ($a['total_tiv_2012'] + $b['total_tiv_2012']) / ($a['total_tiv_2011'] + $b['total_tiv_2011']) - 1,
+	];
+};
+
+$func_key = function ($item) {
+	return strtolower( $item['state'] . ' ' . $item['county'] );
 };
 
 class LogToConsole {
@@ -71,7 +85,7 @@ $progress = function ($type, $input = null, $numlines = null, $numlines_input = 
 	}
 };
 
-MapReduce::$defaults['group_by'] = true;
+MapReduce::$defaults['group_by'] = $func_key;
 MapReduce::$defaults['progress_callback'] = $progress;
 $parser = new MapReduce($input, $map, $reduce, [$output_csv, $output_kml /* , $logger */ ]);
 $parser->run();
