@@ -1,6 +1,24 @@
 <?php
 require_once 'Writer.php';
 
+// https://gist.github.com/johanmeiring/2894568
+if( !function_exists('str_putcsv') ) {
+	function str_putcsv ($input, $delimiter = ',', $enclosure = '"') {
+		// Open a memory "file" for read/write...
+		$fp = fopen('php://temp', 'r+');
+		// ... write the $input array to the "file" using fputcsv()...
+		fputcsv($fp, $input, $delimiter, $enclosure);
+		// ... rewind the "file" so we can read what we just wrote...
+		rewind($fp);
+		// ... read the entire line into a variable...
+		$data = fread($fp, 1048576);
+		// ... close the "file"...
+		fclose($fp);
+		// ... and return the $data to the caller, with the trailing newline from fgets() removed.
+		return rtrim($data, "\n");
+	}
+}
+
 class CsvWriter extends Writer {
 	public static $defaults = array (
 		'overwrite' => false,
@@ -9,6 +27,7 @@ class CsvWriter extends Writer {
 		'delimiter' => '"',
 		'escape' => '"',
 		'buffer' => 1000000,
+		'split_lines' => 0,
 	);
 	
 	private $outputfile = false;
@@ -33,10 +52,10 @@ class CsvWriter extends Writer {
 		return $str;
 	}
 	
-	protected function output_generator () {
-		$fh = fopen($this->outputfile, 'w');
+	protected function inner_generator ($filename) {
+		$fh = fopen($filename, 'w');
 		if ( !$fh ) {
-			throw new Exception('Could not open output file ' . $this->outputfile);
+			throw new Exception('Could not open output file ' . $filename);
 		}
 		
 		$numline = 0;
@@ -53,5 +72,22 @@ class CsvWriter extends Writer {
 		} while ( $row !== null );
 		
 		fclose($fh);
+	}
+	
+	protected function output_generator () {
+		$numfile = 1;
+		$numlines = 0;
+		
+		$gen = $this->inner_generator($this->outputfile);
+		do {
+			$row = yield;
+			$gen->send($row);
+			if ( $this->options('split_lines') && ($numlines > 0) && ($numlines % $this->options('split_lines') == 0) ) {
+				$gen->send(null);
+				$numfile += 1;
+				$gen = $this->inner_generator($this->outputfile . '.' . $numfile . '.csv');
+			}
+			$numlines += 1;
+		} while ( $row !== null );
 	}
 }
