@@ -49,15 +49,17 @@ class CsvReader implements IteratorAggregate {
 			}
 			
 			$row = fgetcsv ($fh, 0, $this->options('separator'), $this->options('delimiter'), $this->options('escape'));
+            
 			if ( self::is_empty($row) ) {
 				if ( $this->options('stop_on_blank') ) {
 					break;
 				}
 				continue;
 			}
+            
 			yield $this->options('with_headers') ? array_combine($headers, $row) : $row;
 		}
-		
+        
 		fclose($fh);
 	}
 	
